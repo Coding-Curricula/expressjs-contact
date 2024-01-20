@@ -1,4 +1,6 @@
 const express = require('express');
+const nodemailer = require('nodemailer');
+require('dotenv').config()
 
 const PORT = 8080;
 
@@ -96,6 +98,35 @@ app.delete('/api/pets/name/:name', (req, res) => {
     } else {
         res.status(404).send('Pet not found');
     }
+});
+
+let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.GMAIL_USERNAME,
+        pass: process.env.GMAIL_PASSWORD
+    }
+})
+
+app.post('/api/send-mail', (req, res, next) => {
+    let { recipient, subject, content } = req.body;
+
+    let mailOptions = {
+        from: process.env.GMAIL_USERNAME,
+        to: recipient,
+        subject: "NEW MESSAGE - " + subject,
+        text: content
+    }
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.log(error);
+            res.status(500).send('Error sending email');
+        } else {
+            console.log('Email sent:' + info.response);
+            res.send('Email sent');
+        }
+    });
 });
 
 app.listen(PORT, () => console.log(`Server is listening on port ${PORT}`));
